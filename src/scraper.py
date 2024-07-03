@@ -212,8 +212,8 @@ def get_cur_news(table):
     return df
 
 def parse_content(x):
-    pattern1 = re.compile('(.+) • (댓글수 [\w,]+).+더보기(.+)')
-    pattern2 = re.compile('(.+) • (댓글수 [\w,]+).+원문 댓글 분석(.+)')
+    pattern1 = re.compile(r'(.+) • (댓글수 [\w,]+).+더보기(.+)')
+    pattern2 = re.compile(r'(.+) • (댓글수 [\w,]+).+원문 댓글 분석(.+)')
     try:
         group = pattern1.findall(x)[0]
     except:

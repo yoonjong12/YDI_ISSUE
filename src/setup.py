@@ -25,6 +25,8 @@ setup(
         "adjustText", 
         "beautifulsoup4", 
         "selenium", 
-        "langchain"
+        "langchain", 
+        'langchain-openai', 
+        'lxml'
         ]
 )

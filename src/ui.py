@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import tkinter as tk
 from tkinter import ttk, filedialog, scrolledtext
 
@@ -326,6 +328,9 @@ def window_scrap():
 
 
 def main():
+    for path in [PATH_EXCEL, PATH_RESULT, PATH_IMG]:
+        Path(path).mkdir(parents=True, exist_ok=True)
+
     window_scrap()
 
 if __name__ == "__main__":

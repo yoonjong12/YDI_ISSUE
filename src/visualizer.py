@@ -6,13 +6,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from adjustText import adjust_text
 
-plt.rc('font', family='AppleGothic') # For MacOS
-# plt.rc('font', family='Malgun Gothic')
-plt.rcParams['axes.unicode_minus'] = False
-
 sys.path.append('../util')
 from config import Config
 config = Config('../config/config.yml').parse()
+
+if config['OS'] == 'mac':
+    plt.rc('font', family='AppleGothic')
+else:
+    plt.rc('font', family='Malgun Gothic')
+plt.rcParams['axes.unicode_minus'] = False
+
 
 PATH_LOAD = config['PATH_RESULT']
 PATH_SAVE = config['PATH_IMG']
