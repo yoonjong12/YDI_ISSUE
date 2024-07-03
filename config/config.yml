@@ -1,0 +1,20 @@
+# SOMECLOUD
+ID: shin.yoon.jong@ydi.or.kr
+PW: yid#2024
+PATH_EXCEL: '/Users/yj/YDI_ISSUE/data/excel'
+PATH_RESULT: '/Users/yj/YDI_ISSUE/data/result'
+PATH_IMG: '/Users/yj/YDI_ISSUE/data/img'
+TAB: 'https://cloud-svc.some.co.kr/analysisStudio/dashboard/be487704-f0ce-4fef-b8b0-202ff2bba599'
+LOGIN: 'https://sso-cloud.some.co.kr/realms/sometrend-cloud-realm/protocol/openid-connect/auth?client_id=sometrend-cloud&redirect_uri=https://cloud-svc.some.co.kr/loginSuccess&response_mode=fragment&response_type=code&scope=openid'
+
+# UI
+SCRAPER_TITLE : 이슈 생애주기 분석
+SCRAPER_GEO : 700x600+100+100
+LOADING_GEO: 700x100+100+100
+NEWS_GEO: 1000x400+200+200
+CONTENT_GEO: 1000x400+300+300
+VIZ_GEO : 1700x700+100+100
+HEADLESS: False
+
+# LLM
+KEY: 'sk-proj-SPVdwpYbScl1VNRiVsqFT3BlbkFJSvaXinTZvXrkRAcZIdU9'
