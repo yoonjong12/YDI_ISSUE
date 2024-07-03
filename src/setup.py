@@ -18,13 +18,13 @@ setup(
     zip_safe=False,
     packages=find_packages(),
     install_requires=[
-        "setuptools==58.2",
-        "virtualenv==20.21.0",
+        "setuptools",
+        "virtualenv",
         "pandas",
         "openpyxl", 
         "adjustText", 
         "beautifulsoup4", 
         "selenium", 
-        "webdriver_manager"
+        "langchain"
         ]
 )
