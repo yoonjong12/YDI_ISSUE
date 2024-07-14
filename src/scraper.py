@@ -16,7 +16,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+# from webdriver_manager.chrome import ChromeDriverManager
 
 sys.path.append('../util')
 from config import Config
@@ -26,7 +26,7 @@ ID = config['ID']
 PW = config['PW']
 PATH_SAVE = config['PATH_EXCEL']
 
-def scrap(args=None):
+def scrap(args):
     if not args['items']:
         args = testcase(args)
 
@@ -81,21 +81,23 @@ def init_scraper(path='', start='2024-06-01', end='2024-06-04', headless=True):
         'download.directory_upgrade': True, 
         }
     options.add_experimental_option("prefs", params)
-    # driver = webdriver.Chrome(options=options)
-    driver = webdriver.Chrome(service=Service(executable_path=ChromeDriverManager().install()), 
-                              options=options)
+    driver = webdriver.Chrome(options=options)
+    # driver = webdriver.Chrome(service=Service(executable_path=ChromeDriverManager().install()), 
+    #                           options=options)
 
     # 로그인
     driver = login(driver, ID, PW)
-    driver.implicitly_wait(20)
+    driver.implicitly_wait(15)
     time.sleep(2)
 
     # 탭 이동
     tab = config['TAB']
     driver.get(tab)
-    driver.implicitly_wait(20)
+    driver.implicitly_wait(15)
     time.sleep(2)
-    ActionChains(driver).send_keys(Keys.ESCAPE).perform()  # 팝업창 제거용 ESC 클릭
+    for _ in range(3):
+        ActionChains(driver).send_keys(Keys.ESCAPE).perform() 
+        time.sleep(1)
     
     element = 'startDate'
     cnt = 0 
@@ -194,7 +196,13 @@ def get_news(news_tab, keyword, start, end):
     content = get_cur_news(table)
     fname = keyword + '_' + start + '_' + end + '.csv'
     content.to_csv(join(PATH_SAVE, fname), encoding='utf-8', index=False)
-        
+    cnt = 0 
+    while not isfile(join(PATH_SAVE, fname)):
+        if cnt == 5:
+            raise Exception('저장 오류:', fname)
+        time.sleep(3)
+        cnt += 1
+
     return
 
 def get_cur_news(table):

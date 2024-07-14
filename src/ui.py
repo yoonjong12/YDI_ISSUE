@@ -31,6 +31,114 @@ PATH_RESULT = config['PATH_RESULT']
 PATH_IMG = config['PATH_IMG']
 date = {'start': '', 'end': ''}
 
+def window_scrap():
+    def add():
+        keyword1 = e_key.get()
+        keyword2 = e_add.get()
+        combined_text = f"{keyword1}, {keyword2}"
+        box.insert(tk.END, combined_text)
+
+    def get_box():
+        start = e_start.get()
+        end = e_end.get()
+        items = list(box.get(0, tk.END))
+        dir = l_output.cget("text")
+        return dir, start, end, items
+    
+    def start(args):
+        dir, start, end, items = args
+
+        args = {}
+        args['dir'] = dir
+        args['start'] = start
+        args['end'] = end
+        args['headless'] = config['HEADLESS']
+        args['items'] = items
+        root.withdraw()
+        start_processing(args)
+    
+    def clear():
+        box.delete(0, tk.END)
+
+    def delete_selected():
+        selected_indices = box.curselection()
+        for index in reversed(selected_indices):
+            box.delete(index)
+
+    root.geometry(config['SCRAPER_GEO'])
+    
+    # Create main frame
+    main_frame = ttk.Frame(root, padding=10)
+    main_frame.grid(row=0, column=0, sticky="nsew")
+
+    # 저장경로 프레임
+    frame_out = ttk.LabelFrame(main_frame, padding=10)
+    frame_out.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+
+    b_dir = ttk.Button(frame_out, text="저장경로 선택", command=lambda: browse(l_output))
+    b_dir.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+
+    l_output = ttk.Label(frame_out, text=PATH_EXCEL)
+    l_output.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+    # 날짜 프레임
+    frame_date = ttk.LabelFrame(main_frame, padding=10)
+    frame_date.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+    l_start = ttk.Label(frame_date, text="시작")
+    l_start.grid(row=0, column=0, padx=5, pady=5, sticky="e")
+    e_start = ttk.Entry(frame_date)
+    e_start.insert(0, "2024-06-20")
+    e_start.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+    l_end = ttk.Label(frame_date, text="종료")
+    l_end.grid(row=0, column=3, padx=5, pady=5, sticky="e")
+    e_end = ttk.Entry(frame_date)
+    e_end.insert(0, "2024-06-25")
+    e_end.grid(row=0, column=4, padx=5, pady=5, sticky="w")
+
+    # 검색어 프레임
+    frame_inp = ttk.LabelFrame(main_frame, padding=10)
+    frame_inp.grid(row=2, column=0, padx=5, pady=5, sticky="nsew")
+
+    l_key = ttk.Label(frame_inp, text="검색어")
+    l_key.grid(row=0, column=0, padx=5, pady=5, sticky="e")
+    e_key = ttk.Entry(frame_inp)
+    e_key.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+    l_add = ttk.Label(frame_inp, text="포함어")
+    l_add.grid(row=0, column=3, padx=5, pady=5, sticky="e")
+    e_add = ttk.Entry(frame_inp)
+    e_add.grid(row=0, column=4, padx=5, pady=5, sticky="ew")
+
+    b_key = ttk.Button(frame_inp, command=add, text='추가')
+    b_key.grid(row=0, column=5, padx=5, pady=5, sticky="e")
+
+    # 리스트 프레임
+    frame_lst = ttk.LabelFrame(main_frame, padding=10)
+    frame_lst.grid(row=3, column=0, padx=5, pady=5, sticky="nsew")
+
+    scroll = tk.Scrollbar(frame_lst)
+    scroll.grid(row=0, column=1, rowspan=10, padx=5, pady=5, sticky="nsew")
+    box = tk.Listbox(frame_lst, width=55, yscrollcommand = scroll.set)
+    box.grid(row=0, column=0, rowspan=10, pady=5, sticky="nsew")    
+
+    b_delete = ttk.Button(frame_lst, text="삭제", command=delete_selected)
+    b_delete.grid(row=7, column=2, columnspan=1, padx=5, pady=5, sticky="s")
+    b_clear = ttk.Button(frame_lst, text="초기화", command=clear)
+    b_clear.grid(row=8, column=2, columnspan=1, padx=5, pady=5, sticky="s")
+    b_start = ttk.Button(frame_lst, text="분석 시작", command=lambda: start(get_box()))
+    b_start.grid(row=9, column=2, columnspan=1, padx=5, pady=5, sticky="s")
+
+    # Configure grid weights
+    root.columnconfigure(0, weight=1)
+    main_frame.columnconfigure(0, weight=1)
+
+    frame_date.columnconfigure(1, weight=1)
+    frame_inp.columnconfigure(2, weight=1)
+    frame_lst.columnconfigure(3, weight=2)
+
+
+
 def browse(output):
     directory = filedialog.askdirectory()
     output.config(text=directory)
@@ -70,7 +178,7 @@ def window_viz():
 
     def listup(df):
         keywords = list(df.index)
-
+        listbox.delete(0, tk.END)
         for k in keywords:
             listbox.insert(tk.END, k)
         listbox.bind('<<ListboxSelect>>', on_select)
@@ -130,7 +238,7 @@ def window_viz():
                                                 # width=500, 
                                                 font=("맑은 고딕", 15))
         
-        summary = '여론 분석 결과가 여기에 표시됩니다. 분석에는 30초정도 소요됩니다.'
+        summary = '여론 분석 결과가 여기에 표시됩니다. 선택한 문서 개수에 따라 30초 ~ 5분까지 소요될 수 있습니다. 과도하게 많이 선택할 시, ChatGPT 입력 초과로 오류가 발생할 수 있습니다.'
         widget_summary.insert(1.0, summary)
         widget_summary.pack(fill=tk.BOTH, expand=True)
 
@@ -223,108 +331,7 @@ def window_load():
     # 시각화 윈도우로 이동
     window.after(1000, switch)
 
-def window_scrap():
-    def add():
-        keyword1 = e_key.get()
-        keyword2 = e_add.get()
-        combined_text = f"{keyword1}, {keyword2}"
-        box.insert(tk.END, combined_text)
 
-    def get_box():
-        start = e_start.get()
-        end = e_end.get()
-        items = list(box.get(0, tk.END))
-        dir = l_output.cget("text")
-        return dir, start, end, items
-    
-    def start(args):
-        dir, start, end, items = args
-
-        args = {}
-        args['dir'] = dir
-        args['start'] = start
-        args['end'] = end
-        args['headless'] = config['HEADLESS']
-        args['items'] = items
-
-        date['start'] = start
-        date['end'] = end
-
-        root.withdraw()
-        start_processing(args)
-    
-    def clear():
-        box.delete(0, tk.END)
-
-    root.geometry(config['SCRAPER_GEO'])
-    
-    # Create main frame
-    main_frame = ttk.Frame(root, padding=10)
-    main_frame.grid(row=0, column=0, sticky="nsew")
-
-    # 저장경로 프레임
-    frame_out = ttk.LabelFrame(main_frame, padding=10)
-    frame_out.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
-
-    b_dir = ttk.Button(frame_out, text="저장경로 선택", command=lambda: browse(l_output))
-    b_dir.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
-
-    l_output = ttk.Label(frame_out, text=PATH_EXCEL)
-    l_output.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-
-    # 날짜 프레임
-    frame_date = ttk.LabelFrame(main_frame, padding=10)
-    frame_date.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
-    l_start = ttk.Label(frame_date, text="시작")
-    l_start.grid(row=0, column=0, padx=5, pady=5, sticky="e")
-    e_start = ttk.Entry(frame_date)
-    e_start.insert(0, "2024-06-20")
-    e_start.grid(row=0, column=1, padx=5, pady=5, sticky="w")
-
-    l_end = ttk.Label(frame_date, text="종료")
-    l_end.grid(row=0, column=3, padx=5, pady=5, sticky="e")
-    e_end = ttk.Entry(frame_date)
-    e_end.insert(0, "2024-06-25")
-    e_end.grid(row=0, column=4, padx=5, pady=5, sticky="w")
-
-    # 검색어 프레임
-    frame_inp = ttk.LabelFrame(main_frame, padding=10)
-    frame_inp.grid(row=2, column=0, padx=5, pady=5, sticky="nsew")
-
-    l_key = ttk.Label(frame_inp, text="검색어")
-    l_key.grid(row=0, column=0, padx=5, pady=5, sticky="e")
-    e_key = ttk.Entry(frame_inp)
-    e_key.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-
-    l_add = ttk.Label(frame_inp, text="포함어")
-    l_add.grid(row=0, column=3, padx=5, pady=5, sticky="e")
-    e_add = ttk.Entry(frame_inp)
-    e_add.grid(row=0, column=4, padx=5, pady=5, sticky="ew")
-
-    b_key = ttk.Button(frame_inp, command=add, text='추가')
-    b_key.grid(row=0, column=5, padx=5, pady=5, sticky="e")
-
-    # 리스트 프레임
-    frame_lst = ttk.LabelFrame(main_frame, padding=10)
-    frame_lst.grid(row=3, column=0, padx=5, pady=5, sticky="nsew")
-
-    scroll = tk.Scrollbar(frame_lst)
-    scroll.grid(row=0, column=1, rowspan=10, padx=5, pady=5, sticky="nsew")
-    box = tk.Listbox(frame_lst, width=55, yscrollcommand = scroll.set)
-    box.grid(row=0, column=0, rowspan=10, pady=5, sticky="nsew")    
-
-    b_clear = ttk.Button(frame_lst, text="초기화", command=clear)
-    b_clear.grid(row=8, column=2, columnspan=1, padx=5, pady=5, sticky="s")
-    b_start = ttk.Button(frame_lst, text="분석 시작", command=lambda: start(get_box()))
-    b_start.grid(row=9, column=2, columnspan=1, padx=5, pady=5, sticky="s")
-
-    # Configure grid weights
-    root.columnconfigure(0, weight=1)
-    main_frame.columnconfigure(0, weight=1)
-
-    frame_date.columnconfigure(1, weight=1)
-    frame_inp.columnconfigure(2, weight=1)
-    frame_lst.columnconfigure(3, weight=2)
 
 
 def main():
