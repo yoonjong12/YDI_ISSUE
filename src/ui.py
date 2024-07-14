@@ -54,6 +54,10 @@ def window_scrap():
         args['end'] = end
         args['headless'] = config['HEADLESS']
         args['items'] = items
+
+        date['start'] = start
+        date['end'] = end
+        
         root.withdraw()
         start_processing(args)
     

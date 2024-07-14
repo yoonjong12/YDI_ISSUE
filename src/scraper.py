@@ -11,7 +11,6 @@ from io import StringIO
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver import ActionChains
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
@@ -234,9 +233,10 @@ def parse_content(x):
 
 
 def search(keyword, subword, start, end, driver):
-    fname = keyword + '_언급량 추이__' + start + '_' + end + '.xlsx'
-    if isfile(join(PATH_SAVE, fname)):
-        return driver, fname
+    excel = keyword + '_언급량 추이__' + start + '_' + end + '.xlsx'
+    csv = keyword + '_언급량 추이__' + start + '_' + end + '.csv'
+    if isfile(join(PATH_SAVE, excel)) and isfile(join(PATH_SAVE, csv)):
+        return driver, excel
     
     wait = WebDriverWait(driver, 2)
     try:
@@ -280,9 +280,9 @@ def search(keyword, subword, start, end, driver):
     download.send_keys(Keys.ENTER)
 
     cnt = 0 
-    while not isfile(join(PATH_SAVE, fname)):
+    while not isfile(join(PATH_SAVE, excel)):
         if cnt == 5:
-            raise Exception('다운로드 오류:', fname)
+            raise Exception('다운로드 오류:', excel)
         time.sleep(3)
         cnt += 1
 
