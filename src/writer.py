@@ -37,7 +37,7 @@ def write(args=None):
     dfs = []
     for path in excels:
         name = path.split('_', 1)[0]
-        df = pd.read_excel(join(PATH_LOAD, path), sheet_name=f'{name} - 추이분석')
+        df = pd.read_excel(join(PATH_LOAD, path), sheet_name=f'{name}')
         df = df.rename({'전체': name}, axis=1)
         df = df[['날짜', name]].set_index('날짜').T
 

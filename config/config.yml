@@ -1,10 +1,10 @@
 # SOMECLOUD
-ID: shin.yoon.jong@ydi.or.kr
-PW: yid#2024
+ID: yjs7658@gmail.com
+PW: ydi1234!
 PATH_EXCEL: '/Users/yj/YDI_ISSUE/data/excel'
 PATH_RESULT: '/Users/yj/YDI_ISSUE/data/result'
 PATH_IMG: '/Users/yj/YDI_ISSUE/data/img'
-TAB: 'https://cloud-svc.some.co.kr/analysisStudio/dashboard/be487704-f0ce-4fef-b8b0-202ff2bba599'
+TAB: 'https://cloud-svc.some.co.kr/analysisStudio/dashboard/608c7a79-78a5-49df-8d8f-c1c58e0570e9'
 LOGIN: 'https://sso-cloud.some.co.kr/realms/sometrend-cloud-realm/protocol/openid-connect/auth?client_id=sometrend-cloud&redirect_uri=https://cloud-svc.some.co.kr/loginSuccess&response_mode=fragment&response_type=code&scope=openid'
 
 # UI
@@ -18,4 +18,4 @@ VIZ_GEO : 1700x700+100+100
 HEADLESS: False
 
 # LLM
-KEY: 'sk-proj-SPVdwpYbScl1VNRiVsqFT3BlbkFJSvaXinTZvXrkRAcZIdU9'
+KEY: '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'

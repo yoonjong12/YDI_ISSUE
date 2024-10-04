@@ -1,4 +1,5 @@
 import re
+import os
 import sys
 import time
 from os.path import join, isfile
@@ -44,10 +45,8 @@ def scrap(args):
         keyword, subword = keyword.strip(), subword.strip()
         args['keyword'] = keyword
         args['subword'] = subword
-        ret = search(keyword, subword, start, end, driver)
-        driver = ret[0]
-        fname = ret[1]
-        fnames.append(fname)
+        driver, excel_path = search(keyword, subword, start, end, driver)
+        fnames.append(excel_path)
     args['excel_ls'] = fnames
     driver.quit()
     return args
@@ -182,8 +181,9 @@ def get_by_name(name, wait):
         ))
     return element
     
-def get_news(news_tab, keyword, start, end):
+def get_news(driver, keyword, start, end):
     time.sleep(1)
+    news_tab = WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.ID, 'id_1686800581735')))
     buttons = WebDriverWait(news_tab, 10).until(
         EC.presence_of_all_elements_located((By.TAG_NAME, "button"))
     )
@@ -233,10 +233,14 @@ def parse_content(x):
 
 
 def search(keyword, subword, start, end, driver):
-    excel = keyword + '_언급량 추이__' + start + '_' + end + '.xlsx'
-    csv = keyword + '_언급량 추이__' + start + '_' + end + '.csv'
-    if isfile(join(PATH_SAVE, excel)) and isfile(join(PATH_SAVE, csv)):
-        return driver, excel
+    excel = keyword + '_언급량 추이.xlsx'
+    excel_path = join(PATH_SAVE, excel)
+    csv = keyword + '_언급량 추이.csv'
+    csv_path = join(PATH_SAVE, csv)
+    if isfile(excel_path):
+        os.remove(excel_path)
+    if isfile(csv_path):
+        os.remove(csv_path)
     
     wait = WebDriverWait(driver, 2)
     try:
@@ -274,25 +278,26 @@ def search(keyword, subword, start, end, driver):
 
     driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_DOWN)
     driver.implicitly_wait(10)
-    time.sleep(1)
+    time.sleep(3)
 
+    # 추이 다운로드
     download = get_by_xpath('//*[@id="btn-exel-download"]', driver)[0]
     download.send_keys(Keys.ENTER)
 
     cnt = 0 
-    while not isfile(join(PATH_SAVE, excel)):
+    while not isfile(excel_path):
         if cnt == 5:
             raise Exception('다운로드 오류:', excel)
         time.sleep(3)
         cnt += 1
 
-    news_tab = WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.ID, 'id_1719127280214')))
-    get_news(news_tab, keyword, start, end)
+   
+    get_news(driver, keyword, start, end)
 
     driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_UP)
     time.sleep(1)
 
-    return driver, fname
+    return driver, excel
 
 if __name__ == "__main__":
     scrap()
