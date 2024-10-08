@@ -1,31 +1,29 @@
-import sys
 from os.path import join
-from glob import glob
+import platform
 
 import pandas as pd
 import matplotlib.pyplot as plt
 from adjustText import adjust_text
 
-sys.path.append('../util')
-from config import Config
-config = Config('../config/config.yml').parse()
-
-if config['OS'] == 'mac':
-    plt.rc('font', family='AppleGothic')
-else:
-    plt.rc('font', family='Malgun Gothic')
-plt.rcParams['axes.unicode_minus'] = False
-
-
-PATH_LOAD = config['PATH_RESULT']
-PATH_SAVE = config['PATH_IMG']
+from src import util
 
 def testcase():
-    load = join(PATH_LOAD, '이슈분석_24-06-07_13-29-25.xlsx')
+    PATH_LOAD = join(util.make_path(), 'data', 'result')
+    PATH_SAVE = join(util.make_path(), 'data', 'img')
+
+    load = join(util.make_path(), PATH_LOAD, '이슈분석_24-06-07_13-29-25.xlsx')
     save = PATH_SAVE
     return load, save
 
 def draw(args=None):
+    if platform.system() == 'Windows':
+        plt.rcParams['font.family'] = 'Malgun Gothic'  # Windows의 맑은 고딕
+    elif platform.system() == 'Darwin':  # macOS의 경우
+        plt.rcParams['font.family'] = 'AppleGothic'
+    else:  # Linux 또는 다른 시스템의 경우
+        plt.rcParams['font.family'] = 'Noto Sans CJK KR'
+    plt.rcParams['axes.unicode_minus'] = False
+
     if args is None:
         load, save = testcase()
     else:
@@ -37,12 +35,9 @@ def draw(args=None):
 
     x_start = x.mean()
     y_start = y.mean()
-    x_left, x_right = min(x)*0.9, max(x)*0.9
-    y_top, y_bottom = max(y)*0.9, min(y)*0.9
 
     width, height = 12*1.5, 12
-
-    fig, ax = plt.subplots(figsize =(width, height))
+    _, ax = plt.subplots(figsize =(width, height))
 
     ax.axhline(y=y_start, xmin=-10**9, xmax=10**9, color='black', linestyle='dashed')
     ax.axvline(x=x_start, ymin=-10**9, ymax=10**9, color='black', linestyle='dashed')
@@ -57,20 +52,12 @@ def draw(args=None):
     plt.text(-0.1, 0.95, '성장', transform=ax.transAxes, fontsize=25, verticalalignment='top', bbox=props)
     plt.text(-0.1, 0.03, '신생', transform=ax.transAxes, fontsize=25, verticalalignment='bottom', bbox=props)
     plt.text(1.02, 0.03, '쇠퇴', transform=ax.transAxes, fontsize=25, verticalalignment='bottom', bbox=props)
-
-    # ax.text(x_left, y_top, '성장', fontsize=25, ha='left', va='top', weight="bold", alpha=.5)
-    # ax.text(x_right, y_top, '성숙', fontsize=25, ha='right', va='top', weight="bold", alpha=.5)
-    # ax.text(x_left, y_bottom, '신생', fontsize=25, ha='left', va='bottom', weight="bold", alpha=.5)
-    # ax.text(x_right, y_bottom, '쇠퇴', fontsize=25, ha='right', va='bottom', weight="bold", alpha=.5)
-
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
 
-    path_fig = join(save, load.split('.')[0].split('/')[-1]) 
+    path_fig = join(util.make_path(), save, load.split('.')[0].split('/')[-1]) 
     plt.savefig(path_fig)
 
-    # plt.show()   
-    
     return df, path_fig
 
 if __name__ == "__main__":

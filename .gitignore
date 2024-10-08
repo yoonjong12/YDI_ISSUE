@@ -4,6 +4,9 @@
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
+# OPENAI KEY
+key.json
+
 ### macOS ###
 # General
 .DS_Store

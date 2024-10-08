@@ -1,37 +1,24 @@
-from pathlib import Path
-
-import tkinter as tk
-from tkinter import ttk, filedialog, scrolledtext
-
-from PIL import Image, ImageTk
-
-import time
-import sys
-from os.path import join, isfile
+from os.path import join
 import threading
 
-from scraper import scrap
-from writer import write
-from visualizer import draw
-from layout import CheckboxTreeview
-from llm import LLM
-
 import pandas as pd
+import tkinter as tk
+from tkinter import ttk, scrolledtext
 
-sys.path.append('../util')
-from config import Config
+from src import util
+from src.config import Config
+from src.scraper import scrap
+from src.writer import write
+from src.visualizer import draw
+from src.layout import CheckboxTreeview
+from src.llm import LLM
 
-config = Config('../config/config.yml').parse()
-root = tk.Tk()
-root.title(config['SCRAPER_TITLE'])
+# 1. 크롤링 
+def window_scrap(root, config):
+    date = {'start': '', 'end': ''}
+    KEY = util.load_key()
+    HEADLESS = True
 
-processing_done = False
-PATH_EXCEL = config['PATH_EXCEL']
-PATH_RESULT = config['PATH_RESULT']
-PATH_IMG = config['PATH_IMG']
-date = {'start': '', 'end': ''}
-
-def window_scrap():
     def add():
         keyword1 = e_key.get()
         keyword2 = e_add.get()
@@ -42,24 +29,18 @@ def window_scrap():
         start = e_start.get()
         end = e_end.get()
         items = list(box.get(0, tk.END))
-        dir = l_output.cget("text")
-        return dir, start, end, items
+        return start, end, items
     
     def start(args):
-        dir, start, end, items = args
+        start, end, items = args
+        config['start'] = start
+        config['end'] = end
+        config['root'] = root
+        config['headless'] = HEADLESS
+        config['items'] = items
 
-        args = {}
-        args['dir'] = dir
-        args['start'] = start
-        args['end'] = end
-        args['headless'] = config['HEADLESS']
-        args['items'] = items
-
-        date['start'] = start
-        date['end'] = end
-        
         root.withdraw()
-        start_processing(args)
+        start_processing(config)
     
     def clear():
         box.delete(0, tk.END)
@@ -69,21 +50,58 @@ def window_scrap():
         for index in reversed(selected_indices):
             box.delete(index)
 
+    def open_key_window():
+        def save_and_close():
+            new_key = key_entry.get()
+            util.save_key(new_key)
+            label_status.config(text="OPENAI Key가 입력되어있습니다", foreground="blue")
+            key_window.destroy()
+        
+        # 새 창 생성
+        key_window = tk.Toplevel(root)
+        key_window.title("키 입력")
+        
+        # 텍스트 입력 필드
+        key_entry = ttk.Entry(key_window, width=30)
+        key_entry.pack(padx=10, pady=10)
+        key_entry.insert(0, KEY if KEY else "OPENAI Key를 여기에 붙여넣으세요")  # 기존 텍스트가 있으면 표시
+        
+        # 저장 버튼
+        save_button = ttk.Button(key_window, text="저장", command=save_and_close)
+        save_button.pack(padx=10, pady=10)
+
+    def toggle_headless():
+        global HEADLESS
+        HEADLESS = not check_var.get()  # 체크박스가 체크되면 False, 해제되면 True
+
     root.geometry(config['SCRAPER_GEO'])
     
     # Create main frame
     main_frame = ttk.Frame(root, padding=10)
     main_frame.grid(row=0, column=0, sticky="nsew")
 
-    # 저장경로 프레임
-    frame_out = ttk.LabelFrame(main_frame, padding=10)
-    frame_out.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+    # 초기 설정 프레임
+    frame_setting = ttk.LabelFrame(main_frame, padding=10)
+    frame_setting.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+    frame_setting.grid_columnconfigure(2, weight=1)  # 2번째 열(체크박스 열)을 확장
+    
+    b_key = ttk.Button(frame_setting, text="OPENAI Key 입력", command=open_key_window)
+    b_key.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
 
-    b_dir = ttk.Button(frame_out, text="저장경로 선택", command=lambda: browse(l_output))
-    b_dir.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+    if KEY:
+        label_status = ttk.Label(frame_setting, text="OPENAI Key가 입력되어있습니다", foreground="blue")
+    else:
+        label_status = ttk.Label(frame_setting, text="OPENAI Key가 아직 입력되어있지 않습니다", foreground="red")
+    label_status.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
-    l_output = ttk.Label(frame_out, text=PATH_EXCEL)
-    l_output.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+    check_var = tk.BooleanVar(value=False)
+    checkbox = ttk.Checkbutton(
+        frame_setting, 
+        text="크롤링 과정 보기", 
+        variable=check_var, 
+        command=toggle_headless
+    )
+    checkbox.grid(row=0, column=2, padx=5, pady=5, sticky="e")
 
     # 날짜 프레임
     frame_date = ttk.LabelFrame(main_frame, padding=10)
@@ -141,52 +159,28 @@ def window_scrap():
     frame_inp.columnconfigure(2, weight=1)
     frame_lst.columnconfigure(3, weight=2)
 
+# 2. 시각화 & 뉴스 요약
+def window_viz(root, config):
+    PATH_NEWS = join(util.make_path(), 'data', 'news')
+    PATH_RESULT = join(util.make_path(), 'data', 'result')
+    PATH_IMG = join(util.make_path(), 'data', 'img')
 
-
-def browse(output):
-    directory = filedialog.askdirectory()
-    output.config(text=directory)
-
-def browse_file(output):
-    path = filedialog.askopenfilename()
-    output.config(text=path)
-
-def clear_frame(frame):
-   for widgets in frame.winfo_children():
-      widgets.destroy()
-
-def open_img(path):
-    return ImageTk.PhotoImage(Image.open(path).resize((800, 600)))
-    
-# 로딩창: 썸트렌드 수집 & 엑셀 작성
-def process(args):
-    args = scrap(args)  # 저장된 엑셀 파일명 반환
-    excel_path = write(args)
-    global processing_done
-    processing_done = True
-
-    return excel_path
-
-def window_viz():
     def go_back():
         window.destroy()
         root.deiconify()
         
     def viz(args):
         df, path_img = draw(args)
-        img = open_img(path_img+'.png')
+        img = util.open_img(path_img+'.png')
         l_img.configure(image=img)
         l_img.image = img
 
-        listup(df)
-
-    def listup(df):
         keywords = list(df.index)
         listbox.delete(0, tk.END)
         for k in keywords:
             listbox.insert(tk.END, k)
         listbox.bind('<<ListboxSelect>>', on_select)
-
+        
     def on_select(event):
         if listbox.curselection():
             index = listbox.curselection()[0]
@@ -204,8 +198,8 @@ def window_viz():
             widget_summary.delete('1.0', tk.END)
             widget_summary.insert(1.0, summary)
 
-        start, end = date['start'], date['end']
-        df = pd.read_csv(join(PATH_EXCEL, keyword+'_'+start+'_'+end+'.csv'), encoding='utf-8')
+        start, end = config['start'], config['end']
+        df = pd.read_csv(join(util.make_path(), PATH_NEWS, keyword+'_'+start+'_'+end+'.csv'), encoding='utf-8')
         df = df.rename({'title': '제목', 'press': '언론사', 'n_reply': '댓글수', 'content': '내용'}, axis=1)
         contents = df.copy()
         df = df.drop('내용', axis=1)
@@ -264,12 +258,12 @@ def window_viz():
     frame_dir = ttk.LabelFrame(main_frame, padding=10, text='앞서 작성한 엑셀 파일을 불러와서 시각화 도표를 그립니다.')
     frame_dir.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
 
-    b_ldir = ttk.Button(frame_dir, text="엑셀파일 선택", command=lambda: browse_file(l_ldir))
+    b_ldir = ttk.Button(frame_dir, text="엑셀파일 선택", command=lambda: util.browse_file(l_ldir, PATH_RESULT))
     b_ldir.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
     l_ldir = ttk.Label(frame_dir, text="엑셀파일을 먼저 선택해주세요")
     l_ldir.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
-    b_sdir = ttk.Button(frame_dir, text="PNG경로 선택", command=lambda: browse(l_sdir))
+    b_sdir = ttk.Button(frame_dir, text="PNG경로 선택", command=lambda: util.browse(l_sdir, PATH_IMG))
     b_sdir.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
     l_sdir = ttk.Label(frame_dir, text=PATH_IMG)
     l_sdir.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
@@ -296,7 +290,7 @@ def window_viz():
     # 이미지
     frame_img = ttk.LabelFrame(main_frame, padding=10, text='미리보기')
     frame_img.grid(row=0, column=1, rowspan=2, padx=5, pady=5, sticky="nsew")
-    img = open_img(join(PATH_IMG, 'white.png'))
+    img = util.open_img(join(PATH_IMG, 'white.png'))
     l_img = ttk.Label(frame_img, image=img)
     l_img.image = img
     l_img.grid(row=0, padx=5, pady=5)
@@ -304,11 +298,11 @@ def window_viz():
 def start_processing(args):
     global processing_done
     processing_done = False
-    window_load()
+    window_load(args['root'], args)
     processing_thread = threading.Thread(target=process, args=(args, ))
     processing_thread.start()
 
-def window_load():
+def window_load(root, config):
     def switch():
         current_text = l_load.cget("text")
         index = strings.index(current_text)  
@@ -320,7 +314,7 @@ def window_load():
             window.after(1000, switch)
         else:
             window.destroy()
-            window_viz()
+            window_viz(root, config)
     
     global processing_done
     processing_done = False
@@ -336,14 +330,22 @@ def window_load():
     window.after(1000, switch)
 
 
+# 로딩창: 썸트렌드 수집 & 엑셀 작성
+def process(args):
+    args = scrap(args)  # 저장된 엑셀 파일명 반환
+    excel_path = write(args)
+    global processing_done
+    processing_done = True
 
+    return excel_path
 
 def main():
-    for path in [PATH_EXCEL, PATH_RESULT, PATH_IMG]:
-        Path(path).mkdir(parents=True, exist_ok=True)
+    config = Config().parse()
+    root = tk.Tk()
+    root.title(config['SCRAPER_TITLE'])
 
-    window_scrap()
+    window_scrap(root, config)
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
-    root.mainloop()

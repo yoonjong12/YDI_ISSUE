@@ -2,10 +2,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext
 import pandas as pd
 
-import sys
-sys.path.append('../util')
-from config import Config
-config = Config('../config/config.yml').parse()
+from src.config import Config
 
 class CheckboxTreeview(ttk.Treeview):
     def __init__(self, master, df, contents, **kwargs):
@@ -15,7 +12,7 @@ class CheckboxTreeview(ttk.Treeview):
         self.df = df
         self.contents = contents
         self.checked = set()
-
+        self.config = Config().parse()
         self.width_dict = {
             '제목': 500, 
             '언론사': 20, 
@@ -71,7 +68,7 @@ class CheckboxTreeview(ttk.Treeview):
         index = int(item)
         top = tk.Toplevel(self.master)
         top.title("뉴스 원문보기")
-        top.geometry(config['CONTENT_GEO'])
+        top.geometry(self.config['CONTENT_GEO'])
         label = scrolledtext.ScrolledText(top, 
                                             wrap=tk.WORD, 
                                             width=500, 

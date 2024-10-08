@@ -1,9 +1,7 @@
 import re
 import os
-import sys
 import time
 from os.path import join, isfile
-from glob import glob
 from collections import defaultdict
 
 import pandas as pd
@@ -18,23 +16,18 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 # from webdriver_manager.chrome import ChromeDriverManager
 
-sys.path.append('../util')
-from config import Config
-config = Config('../config/config.yml').parse()
-
-ID = config['ID']
-PW = config['PW']
-PATH_SAVE = config['PATH_EXCEL']
+from src import util
+from src.config import Config
 
 def scrap(args):
     if not args['items']:
         args = testcase(args)
-
+    
     start = args['start']
     end = args['end']
     headless = args['headless']
 
-    driver = init_scraper(PATH_SAVE, start, end, headless)
+    driver = init_scraper(start, end, headless)
     fnames = []
     for item in args['items']:
         item = item.split(',', 1)
@@ -65,7 +58,8 @@ def testcase(args):
 '''
 Scraper Settings
 '''
-def init_scraper(path='', start='2024-06-01', end='2024-06-04', headless=True):
+def init_scraper(start='2024-06-01', end='2024-06-04', headless=True):
+    config = Config().parse()
     options = Options()
     if headless:
         options.add_argument('headless')
@@ -74,7 +68,6 @@ def init_scraper(path='', start='2024-06-01', end='2024-06-04', headless=True):
 
     params = {
         'behavior': 'allow', 
-        'download.default_directory': path, 
         'download.prompt_for_download': False, 
         'download.directory_upgrade': True, 
         }
@@ -84,7 +77,7 @@ def init_scraper(path='', start='2024-06-01', end='2024-06-04', headless=True):
     #                           options=options)
 
     # 로그인
-    driver = login(driver, ID, PW)
+    driver = login(driver, config)
     driver.implicitly_wait(15)
     time.sleep(2)
 
@@ -126,8 +119,12 @@ def click_bar(driver):
 
     return driver
     
-def login(driver, ID, PW):
-    driver.get(config['LOGIN'])
+def login(driver, config):
+    ID = config['ID']
+    PW = config['PW']
+    LOGIN = config['LOGIN']
+
+    driver.get(LOGIN)
     for _ in range(100):
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     driver.implicitly_wait(20)
@@ -182,6 +179,8 @@ def get_by_name(name, wait):
     return element
     
 def get_news(driver, keyword, start, end):
+    PATH_NEWS = join(util.make_path(), 'data', 'news')
+
     time.sleep(1)
     news_tab = WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.ID, 'id_1686800581735')))
     buttons = WebDriverWait(news_tab, 10).until(
@@ -194,11 +193,12 @@ def get_news(driver, keyword, start, end):
     table = news_tab.find_element(By.TAG_NAME, 'table')            
     content = get_cur_news(table)
     fname = keyword + '_' + start + '_' + end + '.csv'
-    content.to_csv(join(PATH_SAVE, fname), encoding='utf-8', index=False)
+    fpath = join(util.make_path(), PATH_NEWS, fname)
+    content.to_csv(fpath, encoding='utf-8', index=False)
     cnt = 0 
-    while not isfile(join(PATH_SAVE, fname)):
+    while not isfile(fpath):
         if cnt == 5:
-            raise Exception('저장 오류:', fname)
+            raise Exception('뉴스 파일 저장 오류:', fname)
         time.sleep(3)
         cnt += 1
 
@@ -233,6 +233,8 @@ def parse_content(x):
 
 
 def search(keyword, subword, start, end, driver):
+    PATH_SAVE = util.get_download_folder()
+
     excel = keyword + '_언급량 추이.xlsx'
     excel_path = join(PATH_SAVE, excel)
     csv = keyword + '_언급량 추이.csv'
@@ -287,10 +289,9 @@ def search(keyword, subword, start, end, driver):
     cnt = 0 
     while not isfile(excel_path):
         if cnt == 5:
-            raise Exception('다운로드 오류:', excel)
+            raise Exception('언급량 추이 다운로드 오류:', excel)
         time.sleep(3)
         cnt += 1
-
    
     get_news(driver, keyword, start, end)
 

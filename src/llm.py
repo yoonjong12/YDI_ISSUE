@@ -1,22 +1,14 @@
-import sys
-import json
-
-sys.path.append('../util')
-from config import Config
-config = Config('../config/config.yml').parse()
-
-# LangChain Models
+from src import util
 from langchain_openai import ChatOpenAI
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-
 class LLM:
     def __init__(self, keyword):
         self.keyword = keyword
         self.llm = ChatOpenAI(temperature=0, 
-                            api_key=config['KEY'], 
+                            api_key= util.load_key(), 
                             max_tokens=2000,
                           )
         self.text_splitter = RecursiveCharacterTextSplitter(
@@ -41,7 +33,7 @@ class LLM:
 
         chunk_summaries = [chunk_chain.invoke({'text': chunk}) for chunk in chunks]
         chunk_summaries = "\n\n".join(chunk_summaries)
-        print('기사요약: ', chunk_summaries, '\n')
+        # print('기사요약: ', chunk_summaries, '\n')
 
         article_tmplt = """
         뉴스기사 일부를 개괄식으로 요약해둔 글을 읽고, 육하원칙에 따라 정리해줘 
@@ -52,7 +44,7 @@ class LLM:
         )
         article_chain = article_prmpt | self.llm | self.parser
         final_summary = article_chain.invoke({'text': chunk_summaries})
-        print('종합요약: ', final_summary, '\n')
+        # print('종합요약: ', final_summary, '\n')
 
         return final_summary
     
@@ -79,6 +71,6 @@ class LLM:
     def analysis(self, articles):
         summaries = self.summarize_articles(articles)
         summaries = [f'\n\n뉴스 {i}: {x}' for i, x in enumerate(summaries)]
-        print('입력:', summaries)
+        # print('입력:', summaries)
         report = self.generate_report(summaries)
         return report.replace('\n', '') 

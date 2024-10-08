@@ -1,21 +1,8 @@
-import sys
-import time
+import os
 from os.path import join
-from glob import glob
 from datetime import datetime
-
-import scipy.stats as ss
 import pandas as pd
-import numpy as np
-
-sys.path.append('../util')
-from config import Config
-config = Config('../config/config.yml').parse()
-
-ID = config['ID']
-PW = config['PW']
-PATH_LOAD = config['PATH_EXCEL']
-PATH_SAVE = config['PATH_RESULT']
+from src import util
 
 def get_sum(df):
     return df.sum(axis=1)
@@ -28,6 +15,9 @@ def get_diff(df):
     return num / a
 
 def write(args=None):
+    PATH_LOAD = util.get_download_folder()
+    PATH_SAVE = join(util.make_path(), 'data', 'result')
+
     if args is None:
         args = testcase()
 
@@ -46,12 +36,12 @@ def write(args=None):
         df['검색수'] = sum_
         df['증가율'] = diff * -1
         dfs.append(df)
-    df = pd.concat(dfs)
-    
-    # df['sum'] = ss.zscore(np.log(df['sum']))
-    # df['diff'] = ss.zscore(df['diff'])
 
-    path_save = join(PATH_SAVE, fname)
+        os.remove(join(PATH_LOAD, path))
+
+    df = pd.concat(dfs)
+
+    path_save = join(util.make_path(), PATH_SAVE, fname)
     df.to_excel(path_save)
     return path_save
 
