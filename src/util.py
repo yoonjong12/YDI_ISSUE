@@ -32,7 +32,7 @@ def get_download_folder():
 def make_path():
     if getattr(sys, 'frozen', False):
         # PyInstaller로 빌드된 실행 파일일 때
-        return os.path.dirname(sys.executable)
+        return os.path.dirname(os.path.dirname(sys.executable))
     else:
         return ''
     
